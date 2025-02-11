@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+        }
+        #container {
+            display: flex;
+            flex-direction: column; /* Stack elements vertically */
+            align-items: center; /* Center horizontally */
+        }
+        #input-area {
+            display: flex;
+            gap: 10px; /* Space between input elements */
+            margin-bottom: 20px;
+        }
+        table {
+            width: 80%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 8px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        #summary {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        /* Style the chart canvas */
+        #chart-container {
+            width: 80%; /* Adjust as needed */
+            margin-top: 20px;
+        }
+        canvas {
+            max-width: 100%;
+            height: auto;
+        }
+
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>  </head>
+<body>
+    <div id="container">
+        <h1>Expense Tracker</h1>
+
+        <div id="input-area">
+            <input type="text" id="description" placeholder="Description">
+            <input type="number" id="amount" placeholder="Amount">
+            <select id="category">
+                <option value="food">Food</option>
+                <option value="transport">Transport</option>
+                <option value="entertainment">Entertainment</option>
+                <option value="other">Other</option>
+            </select>
+            <button onclick="addExpense()">Add Expense</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Category</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="expense-list">
+                </tbody>
+        </table>
+
+        <div id="summary">
+            Total Expenses: <span id="total-expenses">0</span>
+        </div>
+
+        <div id="chart-container">
+            <canvas id="expense-chart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        let expenses = [];
+        let totalExpenses = 0;
+        const expenseList = document.getElementById('expense-list');
+        const totalExpensesSpan = document.getElementById('total-expenses');
+        const descriptionInput = document.getElementById('description');
+        const amountInput = document.getElementById('amount');
+        const categorySelect = document.getElementById('category');
+        const ctx = document.getElementById('expense-chart').getContext('2d');
+        let myChart; // Store the chart instance
+
+        function addExpense() {
+            const description = descriptionInput.value;
+            const amount = parseFloat(amountInput.value);
+            const category = categorySelect.value;
+            const date = new Date().toLocaleDateString(); // Get current date
+
+            if (description.trim() === "" || isNaN(amount)) {
+                alert("Please enter a valid description and amount.");
+                return;
+            }
+
+            const expense = {
+                description,
+                amount,
+                category,
+                date,
+            };
+
+            expenses.push(expense);
+            totalExpenses += amount;
+            updateExpenseList();
+            updateChart();
+
+            // Clear input fields
+            descriptionInput.value = "";
+            amountInput.value = "";
+        }
+
+        function deleteExpense(index) {
+            const removedExpense = expenses.splice(index, 1)[0];
+            totalExpenses -= removedExpense.amount;
+            updateExpenseList();
+            updateChart();
+        }
+
+        function updateExpenseList() {
+            expenseList.innerHTML = ""; // Clear the table
+
+            expenses.forEach((expense, index) => {
+                const row = expenseList.insertRow();
+                const descriptionCell = row.insertCell();
+                const amountCell = row.insertCell();
+                const categoryCell = row.insertCell();
+                const dateCell = row.insertCell();
+                const actionsCell = row.insertCell();
+
+                descriptionCell.textContent = expense.description;
+                amountCell.textContent = expense.amount;
+                categoryCell.textContent = expense.category;
+                dateCell.textContent = expense.date;
+
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.onclick = () => deleteExpense(index);
+                actionsCell.appendChild(deleteButton);
+            });
+
+            totalExpensesSpan.textContent = totalExpenses.toFixed(2);
+        }
+
+        function updateChart() {
+          const categoryTotals = {};
+
+          expenses.forEach(expense => {
+            const category = expense.category;
+            categoryTotals[category] = (categoryTotals[category] || 0) + expense.amount;
+          });
+
+          const labels = Object.keys(categoryTotals);
+          const data = Object.values(categoryTotals);
+
+            if (myChart) {
+                myChart.destroy(); // Destroy the existing chart
+            }
+
+          myChart = new Chart(ctx, {
+            type: 'pie', // Or 'bar', 'line', etc.
+            data: {
+              labels: labels,
+              datasets: [{
+                data: data,
+                backgroundColor: [ // Customize colors
+                  'rgba(255, 99, 132, 0.5)',
+                  'rgba(54, 162, 235, 0.5)',
+                  'rgba(255, 206, 86, 0.5)',
+                  'rgba(75, 192, 192, 0.5)',
+                  'rgba(153, 102, 255, 0.5)',
+                  'rgba(255, 159, 64, 0.5)'
+                ],
+                borderColor: [ // Customize border colors
+                  'rgba(255, 99, 132, 1)',
+                  'rgba(54, 162, 235, 1)',
+                  'rgba(255, 206, 86, 1)',
+                  'rgba(75, 192, 192, 1)',
+                  'rgba(153, 102, 255, 1)',
+                  'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+              }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false, // Important for resizing
+            }
+          });
+        }
+
+
+    </script>
+
+</body>
+</html>
